@@ -1,0 +1,419 @@
+include:
+  - /aquasec-security-scan/aquasec-security-scan.yml
+  - local: "common-steps-template.yml"
+
+stages:
+  - lint
+  - security-scan
+  - test
+  - deploy-mutatingwebhook
+
+variables:
+  KUBECONFIG: "$CI_PROJECT_DIR/kubeconfig"
+  AQUA_FULL_SCAN: true
+# Use the datadog-k8s-pipeline-base image to run cp, kubectl, helm, and other commands.
+  PIPELINE_BASE_IMAGE: artifactory.tecsysrd.cloud/tecsys-noc/datadog-k8s-pipeline-base:v1-dd454d39
+
+default:
+  tags:
+    - ${DEFAULT_GITLAB_RUNNER_TAG}
+  image:
+    name: ${PIPELINE_BASE_IMAGE}
+    pull_policy: always
+
+
+# Linting Jobs for Different Environments
+lint-dev-green:
+  extends: .lint-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/dev/green"
+  only:
+    changes: 
+      - regions/us-east-1/dev/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+
+lint-rd-green:
+  extends: .lint-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/rd/green"
+  only:
+    changes: 
+      - regions/us-east-1/rd/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+lint-npri-blue:
+  extends: .lint-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npri/blue"
+  only:
+    changes: 
+      - regions/us-east-1/npri/blue/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+lint-npri-green:
+  extends: .lint-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npri/green"
+  only:
+    changes: 
+      - regions/us-east-1/npri/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+lint-npr-green:
+  extends: .lint-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npr/green"
+  only:
+    changes: 
+      - regions/us-east-1/npr/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+lint-npr-blue:
+  extends: .lint-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npr/blue"
+  only:
+    changes: 
+      - regions/us-east-1/npr/blue/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+lint-prod-green:
+  extends: .lint-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/prod/green"
+  only:
+    changes: 
+      - regions/us-east-1/prod/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+lint-prod-ca-blue:
+  extends: .lint-job-template
+  variables:
+    ENV_PATH: "regions/ca-central-1/prod/blue"
+  only:
+    changes: 
+      - regions/ca-central-1/prod/blue/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+lint-prod-ca-green:
+  extends: .lint-job-template
+  variables:
+    ENV_PATH: "regions/ca-central-1/prod/green"
+  only:
+    changes: 
+      - regions/ca-central-1/prod/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+lint-prod-ca-red:
+  extends: .lint-job-template
+  variables:
+    ENV_PATH: "regions/ca-west-1/prod/red"
+  only:
+    changes: 
+      - regions/ca-west-1/prod/red/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+lint-prod-us-blue:
+  extends: .lint-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/prod/blue"
+  only:
+    changes: 
+      - regions/us-east-1/prod/blue/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+# Security Scan Stage for Repository Secrets and Vulnerabilities
+aquasec_security_scan:
+  stage: security-scan
+
+#Test deployment on Dev Cluster
+test-dev-green:
+  extends: .test-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/dev/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_DEV_US_EAST_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_DEV_US_EAST_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_DEV_US_EAST_1_GREEN
+  only:
+    changes: 
+      - regions/us-east-1/dev/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+
+test-rd-green:
+  extends: .test-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/rd/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_RD_US_EAST_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_RD_US_EAST_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_RD_US_EAST_1_GREEN
+  only:
+    changes: 
+      - regions/us-east-1/rd/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+    
+test-npri-blue:
+  extends: .test-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npri/blue"
+    CA_CERTIFICATE: $CA_CERTIFICATE_NPRI_US_EAST_1_BLUE
+    KUBE_API_SERVER: $KUBE_API_SERVER_NPRI_US_EAST_1_BLUE
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_NPRI_US_EAST_1_BLUE
+  only:
+    changes: 
+      - regions/us-east-1/npri/blue/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+test-npri-green:
+  extends: .test-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npri/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_NPRI_US_EAST_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_NPRI_US_EAST_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_NPRI_US_EAST_1_GREEN
+  only:
+    changes: 
+      - regions/us-east-1/npri/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+test-npr-green:
+  extends: .test-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npr/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_NPR_US_EAST_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_NPR_US_EAST_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_NPR_US_EAST_1_GREEN
+  only:
+    changes: 
+      - regions/us-east-1/npr/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+test-npr-blue:
+  extends: .test-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npr/blue"
+    CA_CERTIFICATE: $CA_CERTIFICATE_NPR_US_EAST_1_BLUE
+    KUBE_API_SERVER: $KUBE_API_SERVER_NPR_US_EAST_1_BLUE
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_NPR_US_EAST_1_BLUE
+  only:
+    changes: 
+      - regions/us-east-1/npr/blue/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+test-prod-ca-blue:
+  extends: .test-job-template
+  variables:
+    ENV_PATH: "regions/ca-central-1/prod/blue"
+    CA_CERTIFICATE: $CA_CERTIFICATE_PROD_CA_CENTRAL_1_BLUE
+    KUBE_API_SERVER: $KUBE_API_SERVER_PROD_CA_CENTRAL_1_BLUE
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_PROD_CA_CENTRAL_1_BLUE
+  only:
+    changes: 
+      - regions/ca-central-1/prod/blue/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+test-prod-ca-green:
+  extends: .test-job-template
+  variables:
+    ENV_PATH: "regions/ca-central-1/prod/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_PROD_CA_CENTRAL_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_PROD_CA_CENTRAL_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_PROD_CA_CENTRAL_1_GREEN
+  only:
+    changes: 
+      - regions/ca-central-1/prod/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+test-prod-ca-red:
+  extends: .test-job-template
+  variables:
+    ENV_PATH: "regions/ca-west-1/prod/red"
+    CA_CERTIFICATE: $CA_CERTIFICATE_PROD_CA_WEST_1_RED
+    KUBE_API_SERVER: $KUBE_API_SERVER_PROD_CA_WEST_1_RED
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_PROD_CA_WEST_1_RED
+  only:
+    changes: 
+      - regions/ca-west-1/prod/red/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+test-prod-us-blue:
+  extends: .test-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/prod/blue"
+    CA_CERTIFICATE: $CA_CERTIFICATE_PROD_US_EAST_1_BLUE
+    KUBE_API_SERVER: $KUBE_API_SERVER_PROD_US_EAST_1_BLUE
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_PROD_US_EAST_1_BLUE
+  only:
+    changes: 
+      - regions/us-east-1/prod/blue/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+test-prod-us-green:
+  extends: .test-job-template
+  variables:
+    ENV_PATH: "regions/us-east-1/prod/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_PROD_US_EAST_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_PROD_US_EAST_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_PROD_US_EAST_1_GREEN
+  only:
+    changes: 
+      - regions/us-east-1/prod/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+# Deployment Jobs for Different Environments
+# The Dev, RD and NPRI environments have the flexibility to test stuff in the lower environments easily on our feature branches.
+# NPR and Prod are locked down with rule
+us-east-1-dev-green:
+  extends: .deploy-mutatingwebhook-template
+  variables:
+    ENV_PATH: "regions/us-east-1/dev/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_DEV_US_EAST_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_DEV_US_EAST_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_DEV_US_EAST_1_GREEN
+  only:
+    changes: 
+      - regions/us-east-1/dev/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+      - .gitlab-ci.yml
+      - common-steps-template.yml
+      - service-account/serviceaccount.yaml
+
+
+us-east-1-rd-green:
+  extends: .deploy-mutatingwebhook-template
+  variables:
+    ENV_PATH: "regions/us-east-1/rd/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_RD_US_EAST_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_RD_US_EAST_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_RD_US_EAST_1_GREEN
+  only:
+    changes: 
+      - regions/us-east-1/rd/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+      - .gitlab-ci.yml
+      - common-steps-template.yml
+      - service-account/serviceaccount.yaml
+
+us-east-1-npri-blue:
+  extends: .deploy-mutatingwebhook-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npri/blue"
+    CA_CERTIFICATE: $CA_CERTIFICATE_NPRI_US_EAST_1_BLUE
+    KUBE_API_SERVER: $KUBE_API_SERVER_NPRI_US_EAST_1_BLUE
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_NPRI_US_EAST_1_BLUE
+  only:
+    changes: 
+      - regions/us-east-1/npri/blue/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+      - .gitlab-ci.yml
+      - common-steps-template.yml
+      - service-account/serviceaccount.yaml
+
+us-east-1-npri-green:
+  extends: .deploy-mutatingwebhook-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npri/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_NPRI_US_EAST_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_NPRI_US_EAST_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_NPRI_US_EAST_1_GREEN
+  only:
+    changes: 
+      - regions/us-east-1/npri/green/*
+      - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+      - .gitlab-ci.yml
+      - common-steps-template.yml
+      - service-account/serviceaccount.yaml
+
+# only lock down npr and prod deploys with rules to avoid any accidental impact
+# still able to test stuff in the lower environments easily on our feature branches.
+us-east-1-npr-green:
+  extends: .deploy-mutatingwebhook-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npr/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_NPR_US_EAST_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_NPR_US_EAST_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_NPR_US_EAST_1_GREEN
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TITLE =~ /Merge branch.*/'
+      changes: 
+        - regions/us-east-1/npr/green/*
+        - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+us-east-1-npr-blue:
+  extends: .deploy-mutatingwebhook-template
+  variables:
+    ENV_PATH: "regions/us-east-1/npr/blue"
+    CA_CERTIFICATE: $CA_CERTIFICATE_NPR_US_EAST_1_BLUE
+    KUBE_API_SERVER: $KUBE_API_SERVER_NPR_US_EAST_1_BLUE
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_NPR_US_EAST_1_BLUE
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TITLE =~ /Merge branch.*/'
+      changes: 
+        - regions/us-east-1/npr/blue/*
+        - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+us-east-1-prod-green:
+  extends: .deploy-mutatingwebhook-template
+  variables:
+    ENV_PATH: "regions/us-east-1/prod/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_PROD_US_EAST_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_PROD_US_EAST_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_PROD_US_EAST_1_GREEN
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TITLE =~ /Merge branch.*/'
+      changes: 
+        - regions/us-east-1/prod/green/*
+        - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+ca-central-1-prod-blue:
+  extends: .deploy-mutatingwebhook-template
+  variables:
+    ENV_PATH: "regions/ca-central-1/prod/blue"
+    CA_CERTIFICATE: $CA_CERTIFICATE_PROD_CA_CENTRAL_1_BLUE
+    KUBE_API_SERVER: $KUBE_API_SERVER_PROD_CA_CENTRAL_1_BLUE
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_PROD_CA_CENTRAL_1_BLUE
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TITLE =~ /Merge branch.*/'
+      changes: 
+        - regions/ca-central-1/prod/blue/*
+        - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+ca-central-1-prod-green:
+  extends: .deploy-mutatingwebhook-template
+  variables:
+    ENV_PATH: "regions/ca-central-1/prod/green"
+    CA_CERTIFICATE: $CA_CERTIFICATE_PROD_CA_CENTRAL_1_GREEN
+    KUBE_API_SERVER: $KUBE_API_SERVER_PROD_CA_CENTRAL_1_GREEN
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_PROD_CA_CENTRAL_1_GREEN
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TITLE =~ /Merge branch.*/'
+      changes: 
+        - regions/ca-central-1/prod/green/*
+        - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+ca-west-1-prod-red:
+  extends: .deploy-mutatingwebhook-template
+  variables:
+    ENV_PATH: "regions/ca-west-1/prod/red"
+    CA_CERTIFICATE: $CA_CERTIFICATE_PROD_CA_WEST_1_RED
+    KUBE_API_SERVER: $KUBE_API_SERVER_PROD_CA_WEST_1_RED
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_PROD_CA_WEST_1_RED
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TITLE =~ /Merge branch.*/'
+      changes: 
+        - regions/ca-west-1/prod/red/*
+        - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml
+
+us-east-1-prod-blue:
+  extends: .deploy-mutatingwebhook-template
+  variables:
+    ENV_PATH: "regions/us-east-1/prod/blue"
+    CA_CERTIFICATE: $CA_CERTIFICATE_PROD_US_EAST_1_BLUE
+    KUBE_API_SERVER: $KUBE_API_SERVER_PROD_US_EAST_1_BLUE
+    SERVICE_ACCOUNT_TOKEN: $SERVICE_ACCOUNT_TOKEN_PROD_US_EAST_1_BLUE
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_TITLE =~ /Merge branch.*/'
+      changes: 
+        - regions/us-east-1/prod/blue/*
+        - helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml

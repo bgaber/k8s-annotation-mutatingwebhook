@@ -1,0 +1,6 @@
+# Specify a default Code Owner for all files with a wildcard and require at least 2 approvals from codeowners:
+[All][2]
+* @heathermaryh @briang @behzade @mikes
+
+# A manager should review any changes to this file
+#CODEOWNERS @colink

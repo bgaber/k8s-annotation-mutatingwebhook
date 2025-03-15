@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.webhookDeployment.deploymentName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.webhookDeployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.webhookDeployment.appLabel }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{ tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ .Values.webhookDeployment.appLabel }}
+    spec:
+      containers:
+        - name: {{ .Values.webhookDeployment.containerName }}
+          image: {{ .Values.webhookDeployment.image }}
+          ports:
+            - containerPort: {{ .Values.webhookDeployment.port }}
+          volumeMounts:
+            - name: {{ .Values.webhookDeployment.tlsVolumeName }}
+              mountPath: /tls
+              readOnly: true
+            - name: {{ .Values.webhookDeployment.liveListVolumeName }}
+              mountPath: /data/live-list.txt
+              subPath: live-list.txt
+            - name: {{ .Values.webhookDeployment.idsDictVolumeName }}
+              mountPath: /data/id-nested-dict.txt
+              subPath: id-nested-dict.txt
+          # securityContext:
+          #   readOnlyRootFilesystem: true
+          #   allowPrivilegeEscalation: false
+          #   capabilities:
+          #     drop:
+          #       - ALL
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+      volumes:
+        - name: {{ .Values.webhookDeployment.tlsVolumeName }}
+          secret:
+            secretName: {{ .Values.webhookDeployment.tlsSecretName }}
+        - name: {{ .Values.webhookDeployment.liveListVolumeName }}
+          configMap:
+            name: {{ .Values.webhookDeployment.configmapName1 }}
+        - name: {{ .Values.webhookDeployment.idsDictVolumeName }}
+          configMap:
+            name: {{ .Values.webhookDeployment.configmapName2 }}

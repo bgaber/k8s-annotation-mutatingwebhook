@@ -1,0 +1,27 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ .Values.MutatingWebhookConfiguration.mwhName }}
+  namespace: {{ .Values.namespace }}
+webhooks:
+  - name: {{ .Values.MutatingWebhookConfiguration.webhookName }}
+    clientConfig:
+      service:
+        name: {{ .Values.webhookService.serviceName }}
+        namespace: {{ .Values.namespace }}
+        path: "/mutate"
+      caBundle: {{ .Values.MutatingWebhookConfiguration.certAuthBundle }}
+    timeoutSeconds: {{ .Values.MutatingWebhookConfiguration.timeoutSeconds }}  # Default is 10 seconds, you can increase this up to 30 seconds
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: ["default", "kube-system", "kube-public", "kube-node-lease", "calico-apiserver", "calico-system", "monitoring", "dashboard", "deploy", "security", "sso", "istio-system", "argocd", "mutatingwh", "datadog"]  # Only namespaces not in this list will be affected.  This list was taken from update.py written by Alexandru Grecu.
+    rules:
+      - operations: ["CREATE"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+    failurePolicy: Fail

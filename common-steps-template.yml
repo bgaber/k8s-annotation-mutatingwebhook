@@ -1,0 +1,66 @@
+
+# Common Setup for All Jobs
+.common-setup:
+  before_script:
+    - |
+      cat <<EOF > $KUBECONFIG
+      apiVersion: v1
+      clusters:
+      - cluster:
+          certificate-authority-data: $CA_CERTIFICATE
+          server: $KUBE_API_SERVER
+        name: eks-cluster
+      contexts:
+      - context:
+          cluster: eks-cluster
+          user: gitlab-pipeline
+        name: gitlab-pipeline-context
+      current-context: gitlab-pipeline-context
+      kind: Config
+      preferences: {}
+      users:
+      - name: gitlab-pipeline
+        user:
+          token: $SERVICE_ACCOUNT_TOKEN
+      EOF
+    - chmod 600 $KUBECONFIG
+
+# Linting Job Template
+.lint-job-template:
+  extends: .common-setup
+  stage: lint
+  image: $PIPELINE_BASE_IMAGE
+  script:
+    - cp ./${ENV_PATH}/mutatingwebhookconfiguration.yaml ./helm/k8s-annotation-mutatingwebhook/templates/mutatingwebhookconfiguration.yaml
+    #- yamllint ./helm/k8s-annotation-mutatingwebhook/templates/mutatingwebhookconfiguration.yaml
+
+
+#Test Job Template
+.test-job-template:
+  extends: .common-setup
+  stage: test
+  image: $PIPELINE_BASE_IMAGE
+  script:
+    - cp ./${ENV_PATH}/mutatingwebhookconfiguration.yaml ./helm/k8s-annotation-mutatingwebhook/templates/mutatingwebhookconfiguration.yaml
+    - helm repo update
+  when: manual
+
+
+# MutatingWebhook Deployment Template
+.deploy-mutatingwebhook-template:
+  extends: .common-setup
+  stage: deploy-mutatingwebhook
+  image: $PIPELINE_BASE_IMAGE
+  script:
+    - cp ./${ENV_PATH}/mutatingwebhookconfiguration.yaml ./helm/k8s-annotation-mutatingwebhook/templates/mutatingwebhookconfiguration.yaml
+    - kubectl config view
+    - kubectl get nodes
+    - kubectl -n gitlab get secret
+    - helm list -n gitlab
+    # if the helm secret in gitlab namespace is missing then the following helm command will fail
+    # if "helm list -n gitlab --pending" shows a pending helm install then the following helm command will fail
+    - helm upgrade k8s-annotation-mutatingwebhook ./helm/k8s-annotation-mutatingwebhook --install --namespace=gitlab --create-namespace
+    - helm list -n gitlab
+    - kubectl -n mutatingwh get all,cm,secret,sa,MutatingWebhookConfiguration,hpa,globalnetworkpolicies.crd.projectcalico.org -o wide
+  when: manual
+  

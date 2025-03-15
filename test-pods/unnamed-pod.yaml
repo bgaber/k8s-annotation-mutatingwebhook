@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: cloudtest
+  labels:
+    env: uat
+spec:
+  containers:
+    - name: nginx
+      image: nginx

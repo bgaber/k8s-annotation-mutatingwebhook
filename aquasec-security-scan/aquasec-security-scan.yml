@@ -1,0 +1,36 @@
+variables:
+  AQUA_FULL_SCAN: "FALSE"  
+  TRIVY_RUN_AS_PLUGIN: "aqua"
+  GITLAB_TOKEN: $AQUA_GITLAB_TOKEN
+  AQUA_SKIP_DIR: "./node_modules"
+  TRIVY_USERNAME: $AQUASEC_REGISTRY_USER
+  TRIVY_PASSWORD: $AQUASEC_REGISTRY_PASSWORD
+  
+aquasec_security_scan:
+  image: artifactory.tecsysrd.cloud/tecsys-pipelines/aquasec-code-scanner:v0.183.0
+  stage: pre_validation
+  tags:
+  - "${DEFAULT_GITLAB_RUNNER_TAG}"
+
+  script:
+    - echo "AQUASEC_FULL_SCAN is " $AQUA_FULL_SCAN
+    - echo "CI_PIPELINE_SOURCE is " $CI_PIPELINE_SOURCE
+      
+    #merge request will always trigger an incremental scan only
+    #push request can trigger a full scan if AQUA_FULL_SCAN is set to TRUE  
+    - |
+      if [[ -n $AQUA_SKIP_DIR ]]; then
+        echo "skipping directory in the scan: " $AQUA_SKIP_DIR; 
+        SKIP_DIR_OPTION=" --skip-dirs $AQUA_SKIP_DIR ";
+        echo "SKIP_DIR_OPTION is: " $SKIP_DIR_OPTION;
+      fi;
+
+    - trivy fs --scanners misconfig,vuln --sast --severity HIGH,CRITICAL --skip-pipelines $SKIP_DIR_OPTION --reachability --db-repository=registry.aquasec.com/trivy-db:2 --checks-bundle-repository=registry.aquasec.com/trivy-checks:1 --java-db-repository=registry.aquasec.com/trivy-java-db:1 .
+  
+  # rules:
+  #   - if: $CI_PIPELINE_SOURCE == "merge_request_event" 
+  #   - if: $AQUA_FULL_SCAN=="TRUE" 
+
+  #For now, job will never fail regardless of Assurance Policy, it is either a Pass, or Pass with Warnings
+  allow_failure: true
+

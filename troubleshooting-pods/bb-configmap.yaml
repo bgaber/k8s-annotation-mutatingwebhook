@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: liveconfigmap
+  namespace: mutatingwh
+data:
+  live-list.txt: |
+    mutatingwh1
+    mutatingwh2
+    mutatingwh3
+    mutatingwh4

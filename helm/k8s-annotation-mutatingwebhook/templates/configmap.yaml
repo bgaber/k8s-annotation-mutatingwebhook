@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.webhookDeployment.configmapName1 }}
+  namespace: {{ .Values.namespace }}
+data:
+  live-list.txt: |
+    advent
+    avera
+    banner
+    baylor
+    cchmc
+    cisss
+    elkay
+    houstonm
+    humana
+    intermountainhc
+    kendallelectric
+    lifespan
+    lsl
+    mcleod
+    mcm
+    mdanderson
+    northernha
+    northwestern
+    nslc
+    orlandohealth
+    parkview
+    prismahealth
+    sistersofmercy
+    stlukehs
+    tchpharmacy
+    truepill
+    uhsh
+    uom
+    virtua
+    wmrh
+    wvuhs
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.webhookDeployment.configmapName2 }}
+  namespace: {{ .Values.namespace }}
+data:
+  id-nested-dict.txt: |
+    cognos: {"service": "tecsys-cognos", "role": "bi", "state": "stateful"}
+    iguana: {"service": "tecsys-iguana", "role": "iguana", "state": "stateful"}
+    keycloak-sso-headless: {"service": "keycloak-sso-headless", "role": "authentication", "state": "stateful"}
+    keycloak-sso: {"service": "keycloak-sso", "role": "authentication", "state": "stateful"}
+    postgresql-sso-headless: {"service": "postgresql-sso-headless", "role": "database", "state": "stateful"}
+    postgresql-sso: {"service": "postgresql-sso", "role": "database", "state": "stateful"}
+    redis-headless: {"service": "redis-headless", "role": "cache", "state": "stateful"}
+    redis-master: {"service": "redis-master", "role": "cache", "state": "stateful"}
+    redis-replicas: {"service": "redis-replicas", "role": "cache", "state": "stateful"}
+    tecsys-backup: {"service": "tecsys-backup", "role": "backup", "state": "stateful"}
+    tecsys-elite-appnode: {"service": "tecsys-elite-appnode", "role": "app", "state": "stateful"}
+    tecsys-elite-help: {"service": "tecsys-elite-appnode", "role": "app", "state": "stateful"}
+    tecsys-elite-servicenode: {"service": "tecsys-elite-servicenode", "role": "servicenode", "state": "stateful"}
+    tecsys-ldap: {"service": "tecsys-ldap", "role": "ldap", "state": "stateful"}
+    tecsys-messagebroker: {"service": "tecsys-messagebroker", "role": "messagebroker", "state": "stateful"}
+    tecsys-microservices: {"service": "tecsys-microservices", "role": "microservices", "state": "stateful"}
+    tecsys-sftp: {"service": "tecsys-sftp", "role": "sftp", "state": "stateful"}

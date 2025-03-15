@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-curl
+  namespace: mutatingwh
+  labels:
+    app: client
+spec:
+  containers:
+  - name: busybox
+    image: radial/busyboxplus:curl
+    command: ['sh', '-c', 'while true; do sleep 5; done']
+    securityContext:
+      readOnlyRootFilesystem: true  # ✅ Fixes AquaSec security warning
+      allowPrivilegeEscalation: false  # ✅ Prevents privilege escalation
+      runAsNonRoot: true  # ✅ Ensures the container does not run as root
+      capabilities:
+        drop:
+          - ALL  # ✅ Removes unnecessary Linux capabilities
+

@@ -1,0 +1,22 @@
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  name: {{ .Values.globalNetworkPolicy.gnpName }}
+spec:
+  order: 10
+  # namespaceSelector: kubernetes.io/metadata.name == '{{ .Values.namespace }}'
+  types:
+  - Ingress
+  ingress:
+    - action: Allow
+      metadata:
+        annotations:
+          from: anywhere
+          to: add-annotations-webhook-in-mutatingwh
+      protocol: TCP
+      destination:
+        # selector: app == '{{ .Values.webhookDeployment.appLabel }}'
+        namespaceSelector: kubernetes.io/metadata.name == '{{ .Values.namespace }}'
+        ports:
+          - {{ .Values.webhookDeployment.port }}
+          

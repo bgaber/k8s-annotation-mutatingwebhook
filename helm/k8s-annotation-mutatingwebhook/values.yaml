@@ -1,0 +1,43 @@
+# Default values for k8s-annotation-mutatingwebhook.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+namespace: mutatingwh
+
+podAnnotations:
+  checksum/config: '{{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}'
+
+webhookDeployment:
+  configmapName1: liveconfigmap
+  configmapName2: idsconfigmap
+  deploymentName: add-annotations-webhook
+  containerName: webhook
+  replicas: 2
+  image: artifactory.tecsysrd.cloud/tecsys-noc/add-annotation-webhook:v1-9be25578
+  port: 443
+  appLabel: add-annotations-webhook
+  tlsVolumeName: tls-certs
+  liveListVolumeName: live-volume
+  idsDictVolumeName: ids-volume
+  tlsSecretName: webhook-tls
+
+webhookService:
+  serviceName: add-annotations-webhook-svc
+
+MutatingWebhookConfiguration:
+  mwhName: add-annotations-webhook
+  webhookName: add-annotations.k8s.io
+  certAuthBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURHVENDQWdHZ0F3SUJBZ0lVQStqMmo1R3hMSmRkREM5ZnUwbFQzUFYwKy9Rd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0hERWFNQmdHQTFVRUF3d1JUWFYwWVhScGJtZFhaV0pvYjI5clEwRXdIaGNOTWpVd01qQTBNakF3T0RFMwpXaGNOTWpZd01qQTBNakF3T0RFM1dqQWNNUm93R0FZRFZRUUREQkZOZFhSaGRHbHVaMWRsWW1odmIydERRVENDCkFTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBSmN0OVVFZ3RJOTc3V01nRnAzd3U4eDMKbFdGZCtMRnI1WjJ4eFdFWDNBYWw4WUk0cElpbFhPTjlCRU93SkdLcG9vdWdGVmM4eFg3MDFLTVFmdHIxelorcQpZdVN5MWFQbG0zcG5KNExBRDd5UHFKcTdEdEJweW56UmxBU3R1aEZjbWpLTWp0STRMYTFDMHk5Z3pEenhrUnZvCmpXbHY4ekhGUnplY3BGVFBPSWlLeXRTOWoxOFJTdFIyUk1aeWVNK0ZFR1lkTmNkQURGVkJmRXllZVZUVitnOEYKRzZqY1owRTdnV2VhcWJJcURwaXBncW1WTHc5TUlYRUNWSjlFNjUzVGNxU1p2SSs0UDJvYXpQQ3RKSHlwOU5VZgpGNG9QMU0xYlB5S3ZwZU5HQktXVnltZ0I2UGNWb1lZWDA1YmlGbFdkbGZzZEFZWGZsc0FxSURoaDVCbWtWZ2NDCkF3RUFBYU5UTUZFd0hRWURWUjBPQkJZRUZLNjVnUmU0WmdXOUNUd3ZzeUJHQ0tBd3YxNndNQjhHQTFVZEl3UVkKTUJhQUZLNjVnUmU0WmdXOUNUd3ZzeUJHQ0tBd3YxNndNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSQpodmNOQVFFTEJRQURnZ0VCQUlwMktsaWVGMFRNbDVQcGdFRGxWU0ExSFVPMVdxdlhqaGdhK2hYR0ZzOGx2OUZOCi9mNThCT0RHdDB4cU9FQVJnOWMreGdqbVB3M1J6MmJuNmdGZHBrQnV2ZkU3L29vazYzSDBLYlQwYWYwRlV3TTcKNjNIa211UElidGxKQVN4SEVTVklabDhqN1I0c1RvYU9ySWlqSHgvOFprdDI2RzUrSExFNHdQZ2xHVUZzRWxmWgpwY0RGSExMbVJJWVl6dzVKQnA0V0x5bE0xdnFQTzBaNXR0RThQZ0F1eW1QZVJUR2hSY1o0RmxJbDlGeUtUYXAyCkNNR2lBdVhDVm5Jck82T20rVmQ1YmxleGl2bXY0K0JMdGxCRWp2emEvQ01UcTBnSkdXU05iRWlXN0xiRzE2eVoKZjJUYy82cVlvZ0RmaXJtQ2l4SVVnbVB6bmMxV3ZzV3hnUHV4RG5FPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  timeoutSeconds: 15
+
+HPA:
+  hpaName: annotation-mutating-webhook-hpa
+
+globalNetworkPolicy:
+  gnpName: annotation-mwh-network-policy
+
+clusterRole:
+  clusterRoleName: webhook-list-nodes
+
+clusterRoleBinding:
+  clusterRoleBindingName: webhook-list-nodes-binding
