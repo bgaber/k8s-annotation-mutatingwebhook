@@ -180,9 +180,10 @@ which helm
 helm version
 ```
 
-## Service Account setup for GitLab Pipeline
+## Service Account Setup for GitLab Pipeline
 
-The K8s Service Account that the GitLab Pipeline requires to grant it permissions must exist before the GitLab Pipeline is run.  Therefore, this Service Account must be manually created from the Linux CLI using the following steps:
+<p style="color:red">The K8s Service Account that the GitLab Pipeline requires to grant it permissions must exist before the GitLab Pipeline is run.</p>
+Therefore, this Service Account must be manually created from the Linux CLI using the following steps:
 
 ### Step 1 - Create mutatingwh namespace with correct annotations and labels
 
@@ -227,6 +228,8 @@ CA_CERTIFICATE_DEV_{ENV}_{REGION}_{COLOR}
 KUBE_API_SERVER_{ENV}_{REGION}_{COLOR}
 SERVICE_ACCOUNT_TOKEN_{ENV}_{REGION}_{COLOR}
 ```
+
+<p style="color:red">If changes are made to the `serviceaccount.yaml` file then the three environment variables must be regeneratied.</p>
 
 The GitLab Pipeline is now ready to be run from the GitLab console.
 
@@ -475,3 +478,11 @@ All the K8s Annotation MutatingWebhook resources are uninstalled with the follow
 ```
 helm uninstall k8s-annotation-mutatingwebhook -n gitlab
 ```
+
+## Errors
+
+1. Error from server (Forbidden): nodes is forbidden: User "system:serviceaccount:gitlab:default" cannot list resource "nodes" in API group "" at the cluster scope
+
+Ensure the three environment variables described in the **Service Account Setup for GitLab Pipeline Section** have been created.
+
+2. If you make changes to the serviceaccount.yaml file and you keeps seeing the same permission error then perhaps you didn't regenerate the three environment variables described in the **Service Account Setup for GitLab Pipeline Section**
