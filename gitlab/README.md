@@ -1,6 +1,26 @@
+Kubernetes Annotation MutatingWebhook CI Pipeline
+- [Overview](#overview)
+- [Gitlab Best Practices](#gitlab-best-practices)
+- [Architecture and Workflow](#architecture-and-workflow)
+  - [Steps to Run the Pipeline](#steps-to-run-the-pipeline)
+- [Folder Structure](#folder-structure)
+- [GitLab CI Pipeline Stages](#gitlab-ci-pipeline-stages)
+- [Prerequisite Setup](#prerequisite-setup)
+  - [Clone the k8s-annotation-mutatingwebhook GitLab Project](#clone-the-k8s-annotation-mutatingwebhook-gitlab-project)
+  - [Service Account Setup for GitLab Pipeline](#service-account-setup-for-gitlab-pipeline)
+- [Run GitLab Pipeline from the GitLab console](#run-gitlab-pipeline-from-the-gitlab-console)
+- [GitLab Pipeline Troubleshooting](#gitLab-pipeline-troubleshooting)
+- [Validation Testing of MutatingWebhook After Successful Run of GitLab Pipeline](#validation-testing-of-mutatingwebhook-after-successful-run-of-gitlab-pipeline)
+- [MutatingWebhook Problem Troubleshooting](#mutatingwebhook-problem-troubleshooting)
+- [Uninstallation](#uninstallation)
+
 # Overview
 
 This document explains how to setup the GitLab Pipeline automation of the Helm Chart package that installs the K8s Annotation MutatingWebhook solution using Helm templates and values file.
+
+# Gitlab Best Practices
+
+This repository follows GitLab best practices to maintain a DRY (Don't Repeat Yourself) CI YAML file, particularly essential for managing multi-region environments. To reduce code duplication, we utilize mechanisms such as `includes` and `extends`. For more details, refer [Keeping Your Development Dry ](https://about.gitlab.com/blog/2023/01/03/keeping-your-development-dry/).
 
 # Architecture and Workflow 
 
@@ -160,7 +180,7 @@ The CI pipeline (.gitlab-ci.yml) is designed to support various stages for a com
 
     `AQUA_FULL_SCAN`: Indicates whether to perform a full security scan using AquaSec.
 
-# Linux CLI Prerequisites
+# Prerequisite Setup
 
 ## Clone the k8s-annotation-mutatingwebhook GitLab Project
 
@@ -182,7 +202,7 @@ helm version
 
 ## Service Account Setup for GitLab Pipeline
 
-<p style="color:red">The K8s Service Account that the GitLab Pipeline requires to grant it permissions must exist before the GitLab Pipeline is run.</p>
+### *The K8s Service Account that the GitLab Pipeline requires to grant it permissions must exist before the GitLab Pipeline is run.*
 Therefore, this Service Account must be manually created from the Linux CLI using the following steps:
 
 ### Step 1 - Create mutatingwh namespace with correct annotations and labels
@@ -229,22 +249,34 @@ KUBE_API_SERVER_{ENV}_{REGION}_{COLOR}
 SERVICE_ACCOUNT_TOKEN_{ENV}_{REGION}_{COLOR}
 ```
 
-<p style="color:red">If changes are made to the `serviceaccount.yaml` file then the three environment variables must be regeneratied.</p>
+### *If changes are made to the `serviceaccount.yaml` file then the three environment variables must be regenerated.*
 
-The GitLab Pipeline is now ready to be run from the GitLab console.
+# Run GitLab Pipeline from the GitLab console
+
+The GitLab Pipeline is now ready to be run from the GitLab console.  This can be done in one of two ways:
+
+1. Push a change and merge it
+2. Create a new Pipeline from the GitLab console
 
 # GitLab Pipeline Troubleshooting
 
-**Pipeline Failures**: If you encounter issues, check GitLab's CI/CD logs for errors related to linting, security scans, or deployment steps.
+**Pipeline Failures:** If you encounter issues, check GitLab's CI/CD logs for errors related to linting, security scans, or deployment steps.
 
-**Aquasec Issues**: The R&D Security team manages Aquasec-related issues. For assistance, contact Sally Szeto. The following Aquasec job issue is linked to rate limiting on the ECR used by the scanner, and this has already been reported to the Security team.
+**Aquasec Issues:** The R&D Security team manages Aquasec-related issues. For assistance, contact Sally Szeto. The following Aquasec job issue is linked to rate limiting on the ECR used by the scanner, and this has already been reported to the Security team.
 
 ![alt text](images/aquasec-issue.png)
 
-# Gitlab Best Practices
-This repository follows GitLab best practices to maintain a DRY (Don't Repeat Yourself) CI YAML file, particularly essential for managing multi-region environments. To reduce code duplication, we utilize mechanisms such as `includes` and `extends`. For more details, refer [Keeping Your Development Dry ](https://about.gitlab.com/blog/2023/01/03/keeping-your-development-dry/).
+**Unable to run kubectl commands:**
 
-# Linux CLI Testing of MutatingWebhook After Successful Run of GitLab Pipeline
+Error from server (Forbidden): nodes is forbidden: User "system:serviceaccount:gitlab:default" cannot list resource "nodes" in API group "" at the cluster scope
+
+Ensure the three environment variables described in the **Service Account Setup for GitLab Pipeline Section** have been created.
+
+**Same permission error after change to serviceaccount.yaml:**
+
+If you make changes to the serviceaccount.yaml file and you keeps seeing the same permission error then perhaps you didn't regenerate the three environment variables described in the **Service Account Setup for GitLab Pipeline Section**
+
+# Validation Testing of MutatingWebhook After Successful Run of GitLab Pipeline
 
 Ensure you are in the correct K8s context and then check the Helm installation by running the following command:
  
@@ -397,7 +429,7 @@ kubectl get po -A --sort-by={metadata.creationTimestamp} --no-headers
 
 Confirm Pods have been created after the MutatingWebhook was installed.
 
-# Problem Troubleshooting
+# MutatingWebhook Problem Troubleshooting
 
 ## Service and DNS Configuration
 
@@ -478,11 +510,3 @@ All the K8s Annotation MutatingWebhook resources are uninstalled with the follow
 ```
 helm uninstall k8s-annotation-mutatingwebhook -n gitlab
 ```
-
-## Errors
-
-1. Error from server (Forbidden): nodes is forbidden: User "system:serviceaccount:gitlab:default" cannot list resource "nodes" in API group "" at the cluster scope
-
-Ensure the three environment variables described in the **Service Account Setup for GitLab Pipeline Section** have been created.
-
-2. If you make changes to the serviceaccount.yaml file and you keeps seeing the same permission error then perhaps you didn't regenerate the three environment variables described in the **Service Account Setup for GitLab Pipeline Section**
