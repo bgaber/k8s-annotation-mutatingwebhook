@@ -341,8 +341,8 @@ metadata:
 For more readable output of the annotations use either of the two following command:
 
 ```
-kubectl -n cloudtest get pod nginx -o json | jq '.metadata.annotations'
-kubectl -n cloudtest get pod nginx -o jsonpath='{.metadata.annotations}' | jq
+kubectl run -n {live_namespace} nginx --image=nginx --dry-run=server -o json | jq '.metadata.annotations'
+kubectl run -n {live_namespace} nginx --image=nginx --dry-run=server -o jsonpath='{.metadata.annotations}' | jq
 ```
 
 ### Cleanup
