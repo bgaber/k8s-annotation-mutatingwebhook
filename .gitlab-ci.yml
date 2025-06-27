@@ -5,6 +5,7 @@ include:
 stages:
   - lint
   - security-scan
+  - live-customers
   - test
   - deploy-mutatingwebhook
 
@@ -127,6 +128,22 @@ lint-prod-us-blue:
 aquasec_security_scan:
   stage: security-scan
 
+get-customer-list:
+  stage: live-customers
+  image: $PIPELINE_BASE_IMAGE
+
+  before_script: 
+    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    - export AWS_REGION=us-east-1
+    - apk add --no-cache aws-cli
+    - aws --version
+    - aws sts get-caller-identity
+  script:
+    #- list=$(awk '/live-list.txt:/ { in_block=1; next }/^---/ || /^kind:/ { in_block=0 } in_block && NF { printf "\"%s\", ", $1 }' helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml | sed 's/, $//')
+    - list=$(awk '/live-list.txt:/ { in_block=1; next } /^---/ || /^kind:/ { in_block=0 } in_block && NF { printf "%s, ", $1 }' helm/k8s-annotation-mutatingwebhook/templates/configmap.yaml | sed 's/, $//')
+    - echo "$list"
+    - aws ssm put-parameter --name "live-customers-list-K8S" --value "$list" --type String --overwrite --region $AWS_REGION
 #Test deployment on Dev Cluster
 test-dev-green:
   extends: .test-job-template

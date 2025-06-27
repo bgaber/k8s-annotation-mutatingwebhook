@@ -9,7 +9,7 @@ Kubernetes Annotation MutatingWebhook CI Pipeline
   - [Clone the k8s-annotation-mutatingwebhook GitLab Project](#clone-the-k8s-annotation-mutatingwebhook-gitlab-project)
   - [Service Account Setup for GitLab Pipeline](#service-account-setup-for-gitlab-pipeline)
 - [Run GitLab Pipeline from the GitLab console](#run-gitlab-pipeline-from-the-gitlab-console)
-- [GitLab Pipeline Troubleshooting](#gitLab-pipeline-troubleshooting)
+- [GitLab Pipeline Troubleshooting](#gitlab-pipeline-troubleshooting)
 - [Validation Testing of MutatingWebhook After Successful Run of GitLab Pipeline](#validation-testing-of-mutatingwebhook-after-successful-run-of-gitlab-pipeline)
 - [MutatingWebhook Problem Troubleshooting](#mutatingwebhook-problem-troubleshooting)
 - [Uninstallation](#uninstallation)
@@ -338,7 +338,7 @@ metadata:
 
 ### JSON Formatted Annotations
 
-For more readable output of the annotations use either of the two following command:
+For more readable output of the annotations use either of the two following commands:
 
 ```
 kubectl run -n {live_namespace} nginx --image=nginx --dry-run=server -o json | jq '.metadata.annotations'
@@ -355,10 +355,10 @@ kubectl delete ns mutatingwh1
 
 ## NPRi, NPR and Production Clusters
 
-The actual customer namespaces exist in these clusters and, therefore, we must test against one of the customer namespaces in the `live-list.txt` found in the ConfigMap named `liveconfigmap`.  In the example below we test using the `cloudtest` namespace.
+Unlike the Dev and RD clusters, the actual customer namespaces exist in the NPRi, NPR and Prod clusters and, therefore, we must test against one of the customer namespaces in the `live-list.txt` found in the ConfigMap named `liveconfigmap`.  In the example below we test using the `mcleod` namespace.
 
 ```
-kubectl run nginx --image=nginx -n cloudtest --dry-run=server -o yaml
+kubectl run nginx --image=nginx -n mcleod --dry-run=server -o yaml
 ```
 
 Check the annotations section of the output and confirm you see the correct annotations.  For instance, you should see annotations like these:
@@ -372,11 +372,11 @@ ad.datadoghq.com/tags: '{"env": "prd", "cluster_type": "blue", "namespace": "mcl
 
 ### JSON Formatted Annotations
 
-For more readable output of the annotations use either of the two following command:
+For more readable output of the annotations use either of the two following commands:
 
 ```
-kubectl -n cloudtest get pod nginx -o json | jq '.metadata.annotations'
-kubectl -n cloudtest get pod nginx -o jsonpath='{.metadata.annotations}' | jq
+kubectl run -n {live_namespace} nginx --image=nginx --dry-run=server -o json | jq '.metadata.annotations'
+kubectl run -n {live_namespace} nginx --image=nginx --dry-run=server -o jsonpath='{.metadata.annotations}' | jq
 ```
 
 #### Examples

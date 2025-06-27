@@ -19,6 +19,7 @@ data:
     kendallelectric
     lifespan
     lsl
+    lslsp
     mcleod
     mcm
     mdanderson
@@ -28,9 +29,12 @@ data:
     orlandohealth
     parkview
     prismahealth
+    prosol
+    sanford
     sistersofmercy
     stlukehs
     tchpharmacy
+    thc
     triventure
     truepill
     uhsh
