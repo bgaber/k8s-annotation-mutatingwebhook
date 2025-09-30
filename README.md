@@ -1,4 +1,26 @@
-# k8s-annotation-mutatingwebhook
+Kubernetes Annotation MutatingWebhook
+
+![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white&style=for-the-badge)
+![Helm](https://img.shields.io/badge/Helm-0F1689?logo=helm&logoColor=white&style=for-the-badge)
+
+- [Objective](#objective)
+- [Authentication and Authorization](#authentication-and-authorization)
+  - [How Authentication and Authorization Are Set Up in This Repository](#how-authentication-and-authorization-are-set-up-in-this-repository)
+  - [Authentication Flow Diagram](#authentication-flow-diagram)
+- [Manual installation](#manual-installation)
+  - [Prerequisites](#prerequisites)
+  - [Docker Repository Access](#docker-repository-access)
+  - [Solution Implementation Steps](#solution-implementation-steps)
+- [GitLab Pipeline Installation](#gitlab-pipeline-installation)
+- [Testing](#testing)
+  -[Dev and RD Clusters](#dev-and-rd-clusters)
+  -[NPRi, NPR and Production Clusters](#npri,-npr-and-production-clusters)
+  -[List All Pods In All Namespaces Sorted By Creation Time](#list-all-pods-in-all-namespaces-sorted-by-creation-time)
+- [Problem Troubleshooting](#problem-troubleshooting)
+  - [Service and DNS Configuration](#service-and-dns-configuration)
+  - [Network Policies or Admission Control](#network-policies-or-admission-control)
+  - [Debugging Steps](#debugging-steps)
+- [Uninstallation](#uninstallation)
 
 # Objective
 
@@ -10,7 +32,49 @@ Three methods of deploying the K8s MutatingWebhook are explained:
 2. Standalone Helm Chart package that deploys the K8s MutatingWebhook solution using Helm templates and values file (see separate README.md in the [/helm](helm/README.md) directory).
 3. GitLab Pipeline deployment of Helm Chart package that deploys the K8s MutatingWebhook solution using Helm templates and values file (see separate README.md in the [/gitlab](gitlab/README.md) directory).
 
-# Manual installation of the K8s MutatingWebhook
+# Authentication and Authorization
+
+Every GitLab Pipeline must authenticate before it can provision resources. The type of credentials required depends on the systems being managed:
+
+- **AWS resources with Terraform**: The pipeline requires an **IAM user** (service account) and, in some cases, one or more **IAM roles** that the user or pipeline assumes.  
+- **Kubernetes resources with Helm**: The pipeline requires a **Kubernetes Service Account (SA)** with the appropriate RBAC permissions.  
+
+If you were running the code in this repository manually from a Linux CLI, your user identity would need equivalent permissions (for example, a Kubernetes `ClusterRole` with `admin` privileges).  
+
+👉 The key takeaway is that **authentication is always required** for a GitLab Pipeline, and **authorization** determines *what actions that identity can perform* once authenticated.
+
+## How Authentication and Authorization Are Set Up in This Repository
+
+This pipeline provisions Kubernetes resources using Helm. To authenticate with the Kubernetes API and authorize operations, it relies on a **Kubernetes Service Account (SA)**.  
+
+The following three components are required to enable this:
+
+1. **CA Certificate** – Ensures secure communication with the Kubernetes API server.  
+2. **Kubernetes API Server URL** – The endpoint through which the pipeline communicates with the cluster.  
+3. **Service Account Token** – The credential used to authenticate as the Service Account.  
+
+These values are **manually retrieved** from the Kubernetes cluster using `kubectl` and related CLI commands. For convenience, a Bash script is available to automate this process: [get-k8s-auth-env-vars.sh](https://gitlab.tecsysrd.cloud/ops/noc/general-scripts/-/blob/main/gitlab/get-k8s-auth-env-vars.sh?ref_type=heads).  
+
+The script extracts the **CA Certificate**, **Kubernetes API Server URL**, and **Service Account Token**, and outputs them in a format that can be directly added as **GitLab CI/CD Variables**.  
+
+Storing these values in GitLab ensures that the pipeline can securely authenticate with the Kubernetes API without hardcoding secrets in the repository, while also supporting easier rotation and updates of credentials when needed.
+
+This setup allows the GitLab Pipeline to securely connect to the Kubernetes cluster and apply the necessary Helm charts, with permissions defined by the Service Account’s associated `Role` or `ClusterRole`.
+
+## Authentication Flow Diagram
+
+```mermaid
+graph TD
+    A[GitLab Pipeline Job] -->|"Read from CI/CD Variables"| B[CA Certificate]
+    A -->|"Read from CI/CD Variables"| C[Kubernetes API Server URL]
+    A -->|"Read from CI/CD Variables"| D[Service Account Token]
+    B --> E[Kubernetes API Server]
+    C --> E
+    D --> E
+    E -->|"Authorize based on SA RBAC"| F["Provision Cluster Resources (Helm Charts, Deployments, etc.)"]
+```
+
+# Manual installation
 
 ## Prerequisites
 
@@ -28,7 +92,7 @@ Development testing of this MutatingWewbhook was done on the Tecsys itopia-dev-d
 
 A Docker repository like Docker Hub, AWS Elastic Container Registry (ECR), JFrog Artifactory, etc is required for storing the Webhook Docker image that will be used in the solution.  For this PoC I initially used AWS ECR and then switched to Artifactory using an image pushed using the [https://gitlab.tecsysrd.cloud/ops/noc/noc-base-docker-images.git](https://gitlab.tecsysrd.cloud/ops/noc/noc-base-docker-images.git) repository.
 
-## PoC Solution Implementation Steps
+## Solution Implementation Steps
 
 ### Step 1: Generate TLS Certificates
 
@@ -47,7 +111,7 @@ Kubernetes admission webhooks require the webhook server to use HTTPS. A TLS cer
 
 A bash script called `gencert.sh` was created to run the preceding five openssl commands.
 
-## Step 2: Write the Webhook Server Code
+### Step 2: Write the Webhook Server Code
 
 A simple Python Flask server (webhook.py) is used to handle mutating admission requests. Here’s the Python code:
 
@@ -260,7 +324,7 @@ if __name__ == '__main__':
         logger.critical(f"Error starting the webhook server: {str(e)}")
 ```
 
-## Step 3: Create a Dockerfile
+### Step 3: Create a Dockerfile
 
 Packaging the webhook server shown in Step 2 as a Docker service involves creating a Docker image for the server and then deploying that image in your Kubernetes cluster.  The Docker image is created using a Dockerfile. The Dockerfile will describe how to build the Docker image from the webhook.py server code.
 
@@ -287,7 +351,7 @@ EXPOSE 443
 CMD ["python", "webhook.py"]
 ```
 
-## Step 4: Create a requirements.txt file
+### Step 4: Create a requirements.txt file
 
 Create a requirements.txt file to include the Python dependencies for the Flask server:
 
@@ -298,17 +362,17 @@ Werkzeug==3.0.3
 Kubernetes
 ```
 
-## Step 5: Build the Docker Image
+### Step 5: Build the Docker Image
 
 The Docker image was built using the [https://gitlab.tecsysrd.cloud/ops/noc/noc-base-docker-images.git](https://gitlab.tecsysrd.cloud/ops/noc/noc-base-docker-images.git) repository.
 
-## Step 6: Push the Docker Image to a Container Registry
+### Step 6: Push the Docker Image to a Container Registry
 
 The image was pushed to Artifactory using the [https://gitlab.tecsysrd.cloud/ops/noc/noc-base-docker-images.git](https://gitlab.tecsysrd.cloud/ops/noc/noc-base-docker-images.git) repository.
 
-## Step 7: Deploy the Webhook Server as a Kubernetes Service
+### Step 7: Deploy the Webhook Server as a Kubernetes Service
 
-### *Create a Kubernetes NameSpace, ConfigMap, Deployment and Service Manifest for the webhook server.*
+#### *Create a Kubernetes NameSpace, ConfigMap, Deployment and Service Manifest for the webhook server.*
 
 Create a namespace.yaml manifest file:
 
@@ -455,13 +519,13 @@ spec:
     app: add-annotations-webhook
 ```
 
-## Step 8: Create a Kubernetes Secret for the TLS Certificates
+### Step 8: Create a Kubernetes Secret for the TLS Certificates
 
 Create a Kubernetes Secret to hold the TLS certificate and key:
 
 `kubectl create secret tls webhook-tls --cert=certificates/webhook-server.crt --key=certificates/webhook-server.key -n mutatingwh`
 
-## Step 9: Apply the Deployment and Service
+### Step 9: Apply the Deployment and Service
 
 Deploy the K8s webhook server resources:
 
@@ -520,6 +584,38 @@ Finally, apply the configuration:
 `kubectl apply -f mutatingwebhookconfiguration.yaml`
 
 Now, only in the namespace that matches the namespaceSelector, the webhook server should be intercepting pod creation requests and adding the specified annotations dynamically.
+
+# GitLab Pipeline Installation
+
+ As explained in the [Authentication and Authorization](#authentication-and-authorization) section a K8s Service Account must exist before the GitLab pipeline can be run.  Also, because the K8s Service Account exists in the `mutatingwh` namespace then the `mutatingwh` namespace must exist before the K8s Service Account can be created.
+
+ Therefore, the `mutatingwh` namespace must be manually created using this K8s manifest file:
+
+ ```
+ apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    meta.helm.sh/release-name: k8s-annotation-mutatingwebhook
+    meta.helm.sh/release-namespace: gitlab
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    kubernetes.io/metadata.name: mutatingwh
+  name: mutatingwh
+```
+
+  Once the `mutatingwh` namespace has been created then the Service Account can be created using the `set-gitlab-env-vars.sh` bash script found in the [general-scripts](https://gitlab.tecsysrd.cloud/ops/noc/general-scripts) GitLab repository at this location: https://gitlab.tecsysrd.cloud/ops/noc/general-scripts/-/blob/main/gitlab/set-gitlab-env-vars.sh?ref_type=heads
+
+  You will need to edit the `et-gitlab-env-vars.sh` script to set the ENV, REGION, COLOR and GITLAB_TOKEN values as shown in the example below:
+
+  ```
+ENV="PROD"
+REGION="us_east_1"
+COLOR="BLUE"
+GITLAB_TOKEN="glpat-0123456789"
+```
+
+Once this is done then you can run the GitLab pipeline.
 
 # Testing
 

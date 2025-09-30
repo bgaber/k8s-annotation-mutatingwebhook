@@ -6,9 +6,13 @@ metadata:
 data:
   live-list.txt: |
     advent
+    aci
     avera
     banner
     baylor
+    brownuniversityhealth
+    carilion
+    cbi
     cchmc
     chum
     cisss
@@ -27,20 +31,23 @@ data:
     northwestern
     nslc
     orlandohealth
+    osu
     parkview
     prismahealth
     prosol
     sanford
+    sentara
     sistersofmercy
     stlukehs
     tchpharmacy
+    tchsc
     thc
     triventure
     truepill
     uhsh
     uom
     uwmedicine
-    virtua
+    somwms
     virtuahealth
     wmrh
     wvuhs
